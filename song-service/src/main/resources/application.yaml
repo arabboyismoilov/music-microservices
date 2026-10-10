@@ -3,14 +3,14 @@ spring:
     name: song-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5434/song_db
-    username: postgres
-    password: postgres
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/song_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     open-in-view: false
 
 server:
-  port: 8085
+  port: ${SERVER_PORT:8085}
