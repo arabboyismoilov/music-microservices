@@ -1,13 +1,9 @@
 package com.epam.resourceservice.controller;
 
-import com.epam.resourceservice.service.IdParser;
 import com.epam.resourceservice.service.ResourceService;
-import org.apache.tika.exception.TikaException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -16,14 +12,9 @@ import java.util.Map;
 public class ResourceController {
 
     private final ResourceService resourceService;
-    private final IdParser idParser;
 
-    public ResourceController(
-            ResourceService resourceService,
-            IdParser idParser
-    ) {
+    public ResourceController(ResourceService resourceService) {
         this.resourceService = resourceService;
-        this.idParser = idParser;
     }
 
     @PostMapping
@@ -33,8 +24,7 @@ public class ResourceController {
                     value = "Content-Type",
                     required = false
             ) String contentType
-    ) throws IOException, TikaException, SAXException {
-
+    ) {
         Long id = resourceService.upload(data, contentType);
 
         return ResponseEntity.ok(Map.of("id", id));
@@ -49,15 +39,12 @@ public class ResourceController {
                 .body(data);
     }
 
-
     @DeleteMapping
     public ResponseEntity<Map<String, List<Long>>> delete(
             @RequestParam String id
     ) {
-        List<Long> ids = idParser.parse(id);
-        List<Long> deletedIds = resourceService.deleteByIds(ids);
+        List<Long> deletedIds = resourceService.deleteByIds(id);
 
         return ResponseEntity.ok(Map.of("ids", deletedIds));
     }
-
 }

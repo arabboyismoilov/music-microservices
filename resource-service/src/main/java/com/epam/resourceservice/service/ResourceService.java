@@ -8,39 +8,41 @@ import com.epam.resourceservice.exception.InvalidResourceIdException;
 import com.epam.resourceservice.exception.ResourceNotFoundException;
 import com.epam.resourceservice.exception.SongServiceException;
 import com.epam.resourceservice.repository.ResourceRepository;
-import org.apache.tika.exception.TikaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
-import org.xml.sax.SAXException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
-import java.io.IOException;
 import java.util.List;
 
 @Service
 public class ResourceService {
 
+    private static final Logger log = LoggerFactory.getLogger(ResourceService.class);
+
     private final ResourceRepository resourceRepository;
     private final Mp3MetadataExtractor metadataExtractor;
     private final RestClient songServiceRestClient;
+    private final IdParser idParser;
 
     public ResourceService(
             ResourceRepository resourceRepository,
             Mp3MetadataExtractor metadataExtractor,
-            RestClient songServiceRestClient
+            RestClient songServiceRestClient,
+            IdParser idParser
     ) {
         this.resourceRepository = resourceRepository;
         this.metadataExtractor = metadataExtractor;
         this.songServiceRestClient = songServiceRestClient;
+        this.idParser = idParser;
     }
 
     @Transactional
-    public Long upload(byte[] data, String contentType)
-            throws IOException, TikaException, SAXException {
-
-
+    public Long upload(byte[] data, String contentType) {
         if (contentType == null) {
             throw new InvalidFileFormatException(
                     "Content-Type is required. Only MP3 files are allowed"
@@ -64,6 +66,10 @@ public class ResourceService {
             );
         }
 
+        if (data == null || data.length == 0) {
+            throw new InvalidFileFormatException("File data is empty or invalid");
+        }
+
         ExtractedSongMetadata metadata = metadataExtractor.extract(data);
 
         Resource resource = resourceRepository.save(new Resource(data));
@@ -77,7 +83,6 @@ public class ResourceService {
                 metadata.year()
         );
 
-
         try {
             songServiceRestClient.post()
                     .uri("/songs")
@@ -85,9 +90,17 @@ public class ResourceService {
                     .body(songRequest)
                     .retrieve()
                     .toBodilessEntity();
-        } catch (org.springframework.web.client.RestClientException ex) {
+        } catch (RestClientResponseException ex) {
+            log.error("Song Service call failed with HTTP status {}: {}", ex.getStatusCode(), ex.getResponseBodyAsString(), ex);
             resourceRepository.delete(resource);
-            throw new SongServiceException();
+            if (ex.getStatusCode().is4xxClientError()) {
+                throw new InvalidFileFormatException("Invalid MP3 metadata");
+            }
+            throw new SongServiceException(ex);
+        } catch (RestClientException ex) {
+            log.error("Song Service communication failed: {}", ex.getMessage(), ex);
+            resourceRepository.delete(resource);
+            throw new SongServiceException(ex);
         }
 
         return resource.getId();
@@ -104,6 +117,11 @@ public class ResourceService {
                 .getData();
     }
 
+    @Transactional
+    public List<Long> deleteByIds(String csv) {
+        List<Long> ids = idParser.parse(csv);
+        return deleteByIds(ids);
+    }
 
     @Transactional
     public List<Long> deleteByIds(List<Long> ids) {
@@ -127,13 +145,13 @@ public class ResourceService {
                             .build())
                     .retrieve()
                     .toBodilessEntity();
-        } catch (org.springframework.web.client.RestClientException ex) {
-            throw new SongServiceException();
+        } catch (RestClientException ex) {
+            log.error("Failed to delete song metadata from Song Service: {}", ex.getMessage(), ex);
+            throw new SongServiceException(ex);
         }
 
         resourceRepository.deleteAllById(deletedIds);
 
         return deletedIds;
     }
-
 }

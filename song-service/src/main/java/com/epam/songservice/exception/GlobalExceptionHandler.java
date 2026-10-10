@@ -8,10 +8,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -39,6 +43,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidIdException.class)
     public ResponseEntity<ApiError> handleInvalidId(
             InvalidIdException exception
+    ) {
+        return error(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgument(
+            IllegalArgumentException exception
     ) {
         return error(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
@@ -105,13 +116,54 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, message);
     }
 
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiError> handleMissingParameter(
+            MissingServletRequestParameterException ex
+    ) {
+        return error(
+                HttpStatus.BAD_REQUEST,
+                "Required request parameter '" + ex.getParameterName()
+                        + "' is missing"
+        );
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> handleUnreadableBody(
             HttpMessageNotReadableException exception
     ) {
         return error(
                 HttpStatus.BAD_REQUEST,
-                "Request body is missing or contains invalid JSON"
+                "Request body is missing or invalid"
+        );
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex
+    ) {
+        return error(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "HTTP method '" + ex.getMethod() + "' is not supported"
+        );
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiError> handleUnsupportedMediaType(
+            HttpMediaTypeNotSupportedException ex
+    ) {
+        return error(
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                "Content type is not supported"
+        );
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiError> handleNoResourceFound(
+            NoResourceFoundException ex
+    ) {
+        return error(
+                HttpStatus.NOT_FOUND,
+                "Requested endpoint was not found"
         );
     }
 

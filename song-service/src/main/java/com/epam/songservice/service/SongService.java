@@ -17,9 +17,11 @@ import java.util.List;
 public class SongService {
 
     private final SongRepository songRepository;
+    private final IdParser idParser;
 
-    public SongService(SongRepository songRepository) {
+    public SongService(SongRepository songRepository, IdParser idParser) {
         this.songRepository = songRepository;
+        this.idParser = idParser;
     }
 
     @Transactional
@@ -54,6 +56,12 @@ public class SongService {
                 .orElseThrow(() -> new SongNotFoundException(id));
 
         return toResponse(song);
+    }
+
+    @Transactional
+    public List<Long> deleteByIds(String csv) {
+        List<Long> ids = idParser.parse(csv);
+        return deleteByIds(ids);
     }
 
     @Transactional
