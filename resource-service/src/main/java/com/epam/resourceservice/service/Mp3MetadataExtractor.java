@@ -10,6 +10,8 @@ import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
@@ -17,6 +19,8 @@ import java.io.IOException;
 
 @Component
 public class Mp3MetadataExtractor {
+
+    private static final Logger log = LoggerFactory.getLogger(Mp3MetadataExtractor.class);
 
     public ExtractedSongMetadata extract(byte[] data) {
         if (data == null || data.length == 0) {
@@ -34,9 +38,11 @@ public class Mp3MetadataExtractor {
                     new ParseContext()
             );
         } catch (TikaException | SAXException | IOException ex) {
-            throw new InvalidFileFormatException("Failed to parse MP3 metadata: " + ex.getMessage());
+            log.error("Failed to parse MP3 metadata: {}", ex.getMessage(), ex);
+            throw new InvalidFileFormatException("Invalid MP3 file", ex);
         } catch (Exception ex) {
-            throw new InvalidFileFormatException("Failed to parse MP3 metadata: " + ex.getMessage());
+            log.error("Unexpected error during MP3 metadata extraction: {}", ex.getMessage(), ex);
+            throw new InvalidFileFormatException("Invalid MP3 file", ex);
         }
 
         String name = metadata.get(TikaCoreProperties.TITLE);
