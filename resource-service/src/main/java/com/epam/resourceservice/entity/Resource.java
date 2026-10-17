@@ -11,20 +11,20 @@ public class Resource {
     private Long id;
 
     @Column(nullable = false)
-    private byte[] data;
+    private String location;
 
     protected Resource() {
     }
 
-    public Resource(byte[] data) {
-        this.data = data;
+    public Resource(String location) {
+        this.location = location;
     }
 
     public Long getId() {
         return id;
     }
 
-    public byte[] getData() {
-        return data;
+    public String getLocation() {
+        return location;
     }
 }

@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: resource-processor
+  main:
+    web-application-type: none

@@ -29,3 +29,11 @@ server:
 
 song-service:
   url: ${SONG_SERVICE_URL:http://song-service}
+
+aws:
+  s3:
+    endpoint: ${AWS_S3_ENDPOINT:http://localhost:4566}
+    bucket: ${AWS_S3_BUCKET:resources}
+    region: ${AWS_S3_REGION:us-east-1}
+    access-key: ${AWS_ACCESS_KEY_ID:test}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:test}
