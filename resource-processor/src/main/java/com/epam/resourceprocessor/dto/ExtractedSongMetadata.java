@@ -1,4 +1,4 @@
-package com.epam.resourceservice.dto;
+package com.epam.resourceprocessor.dto;
 
 public record ExtractedSongMetadata(
         String name,

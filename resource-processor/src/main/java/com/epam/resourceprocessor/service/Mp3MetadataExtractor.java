@@ -1,7 +1,7 @@
-package com.epam.resourceservice.service;
+package com.epam.resourceprocessor.service;
 
-import com.epam.resourceservice.dto.ExtractedSongMetadata;
-import com.epam.resourceservice.exception.InvalidFileFormatException;
+import com.epam.resourceprocessor.dto.ExtractedSongMetadata;
+import com.epam.resourceprocessor.exception.InvalidFileFormatException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;

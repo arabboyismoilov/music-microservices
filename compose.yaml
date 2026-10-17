@@ -33,6 +33,20 @@ services:
       retries: 5
       start_period: 5s
 
+  localstack:
+    image: localstack/localstack:3.8
+    ports:
+      - "${LOCALSTACK_PORT}:4566"
+    environment:
+      - SERVICES=s3
+      - AWS_DEFAULT_REGION=${AWS_S3_REGION}
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal s3 ls || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   resource-service:
     build: ./resource-service
     ports:
@@ -43,8 +57,15 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${RESOURCE_DB_PASSWORD}
       SONG_SERVICE_URL: ${SONG_SERVICE_URL}
       EUREKA_CLIENT_SERVICE_URL_DEFAULT_ZONE: ${EUREKA_CLIENT_SERVICE_URL_DEFAULT_ZONE}
+      AWS_S3_ENDPOINT: ${AWS_S3_ENDPOINT}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      AWS_S3_REGION: ${AWS_S3_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
     depends_on:
       resource-db:
+        condition: service_healthy
+      localstack:
         condition: service_healthy
       music-service-registry:
         condition: service_healthy
@@ -63,6 +84,9 @@ services:
         condition: service_healthy
       music-service-registry:
         condition: service_healthy
+
+  resource-processor:
+    build: ./resource-processor
 
   music-service-registry:
     build: ./music-service-registry
